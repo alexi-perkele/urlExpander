@@ -68,7 +68,9 @@ class SpreadSheet:
             print('No data found.')
 
         for row in values:
-            if row[0]:
+
+            if row:
+
                 yield row[0]
 
     def write_urls(self, urls):
@@ -91,13 +93,6 @@ class SpreadSheet:
         valueInputOption = "RAW", body=body).execute()
         print("Writing URLs done")
         return result
-
-def factory(type):
-        #return eval(type + "()")
-        if type == "Circle": return Circle()
-        if type == "Square": return Square()
-        assert 0, "Bad shape creation: " + type
-factory = staticmethod(factory)
 
 def unshorten_url(url):
     long_url = requests.head(url, allow_redirects=True).url

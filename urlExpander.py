@@ -68,9 +68,7 @@ class SpreadSheet:
             print('No data found.')
 
         for row in values:
-
             if row:
-
                 yield row[0]
 
     def write_urls(self, urls):

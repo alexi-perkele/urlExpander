@@ -119,23 +119,6 @@ if __name__ == "__main__":
     with open('UrlExpanderSettings_NEW.json') as json_data:
         Settings = json.load(json_data)
     print("Done.")
-    '''
-    sp = SpreadSheet(Settings['SpreadSheetID'], Settings['ShortUrlColumn'], Settings['LongUrlColumn'])
-    print("Start reading sheet")
-    urls = sp.get_urls()
-
-    if not urls:
-        print("Nothing to write. Exiting.")
-        print(urls)
-        sys.exit(1)
-
-    rez = []
-    rez.append([unshorten_url(uu) for uu in sp.get_urls()])
-
-    for n, x in enumerate(urls, start=1):
-        xx = str(n) + " " + x + ' ----> ' + unshorten_url(x)
-        print(xx)
-'''
      # create threads
     threads = [threading.Thread(target=factory, args=args) for args in read_config(Settings)]
 

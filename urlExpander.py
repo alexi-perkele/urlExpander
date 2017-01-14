@@ -116,7 +116,7 @@ def factory(spname, spid, shcol, lncol):
 if __name__ == "__main__":
     print("Start reading sheet")
     print("Reading configuration..")
-    with open('UrlExpanderSettings_NEW.json') as json_data:
+    with open('UrlExpanderSettings.json') as json_data:
         Settings = json.load(json_data)
     print("Done.")
      # create threads

@@ -91,7 +91,10 @@ class SpreadSheet:
         return result
 
 def unshorten_url(url):
-    long_url = requests.head(url, allow_redirects=True).url
+    if url:
+        long_url = requests.head(url, allow_redirects=True).url
+    else:
+        long_url = "can't unshort. No short url specified."
     return long_url
 
 

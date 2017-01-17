@@ -75,7 +75,6 @@ class SpreadSheet:
         if not urls:
             print("No Urls to write")
             return
-        print("Writing URLs")
 
         discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
                     'version=v4')
@@ -89,17 +88,33 @@ class SpreadSheet:
         result = service.spreadsheets().values().update(
         spreadsheetId = self.spreadsheetId, range=self.lng_col,
         valueInputOption = "RAW", body=body).execute()
-        print("Writing URLs done")
         return result
 
 def unshorten_url(url):
-    long_url = requests.head(url, allow_redirects=True).url
+    if url:
+        long_url = requests.head(url, allow_redirects=True).url
+    else:
+        long_url = "can't unshort. No short url specified."
     return long_url
 
 
 def read_config(settings):
     for x in settings["SpreadSheets"]:
-        yield x['SpreadSheetID'], x['ShortUrlColumn'], x['LongUrlColumn']
+        yield x['Name'], x['SpreadSheetID'], x['ShortUrlColumn'], x['LongUrlColumn']
+
+def factory(spname, spid, shcol, lncol):
+    print("Start reading " +spname)
+    sp = SpreadSheet(spid, shcol, lncol)
+    urls = sp.get_urls()
+
+    if not urls:
+        print("Nothing to write to" + spname + "Exiting.")
+        print(urls)
+    rez = []
+    rez.append([unshorten_url(uu) for uu in urls])
+    sp.write_urls(rez)
+    print("writing " + spname + " done")
+    return
 
 if __name__ == "__main__":
     print("Start reading sheet")
@@ -107,26 +122,8 @@ if __name__ == "__main__":
     with open('UrlExpanderSettings.json') as json_data:
         Settings = json.load(json_data)
     print("Done.")
-
-    sp = SpreadSheet(Settings['SpreadSheetID'], Settings['ShortUrlColumn'], Settings['LongUrlColumn'])
-    print("Start reading sheet")
-    urls = sp.get_urls()
-
-    if not urls:
-        print("Nothing to write. Exiting.")
-        print(urls)
-        sys.exit(1)
-
-    rez = []
-    rez.append([unshorten_url(uu) for uu in sp.get_urls()])
-
-    for n, x in enumerate(urls, start=1):
-        xx = str(n) + " " + x + ' ----> ' + unshorten_url(x)
-        print(xx)
-    '''
      # create threads
-    threads = [threading.Thread(target=loop, args=(read_config(Settings)))
-               for i in range(nthreads)]
+    threads = [threading.Thread(target=factory, args=args) for args in read_config(Settings)]
 
     # start threads
     for t in threads:
@@ -135,7 +132,5 @@ if __name__ == "__main__":
     # wait for threads to finish
     for t in threads:
         t.join()
-'''
-    sp.write_urls(rez)
 
     print("Job is done.")

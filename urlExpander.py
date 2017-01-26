@@ -8,7 +8,6 @@ from oauth2client.file import Storage
 from apiclient import discovery
 import requests
 import json
-import sys
 import threading
 
 
@@ -111,7 +110,7 @@ def factory(spname, spid, shcol, lncol):
         print("Nothing to write to" + spname + "Exiting.")
         print(urls)
     rez = []
-    rez.append([unshorten_url(uu) for uu in urls])
+    rez.append([unshorten_url(uu) for uu in urls])  # must be list of lists
     sp.write_urls(rez)
     print("writing " + spname + " done")
     return

@@ -25,10 +25,8 @@ class SpreadSheet:
     CLIENT_SECRET_FILE = 'client_secret.json'
     app_json = 'sheets.googleapis.com-urlExpander.json'
 
-    def __init__(self, spreadsheetId=None, sh_col=None, lng_col=None):
+    def __init__(self, spreadsheetId=None):
         self.spreadsheetId = spreadsheetId
-        self.sh_col = sh_col
-        self.lng_col = lng_col
         current_path = os.getcwd()
         credential_dir = os.path.join(current_path, "creds")   # Current dir creds path
         credential_path = os.path.join(credential_dir, self.app_json)
@@ -48,52 +46,51 @@ class SpreadSheet:
             else: # Needed only for compatibility with Python 2.6
                 self.credentials = tools.run(flow, store)
             print('Storing credentials to ' + credential_path)
-
         self.http = self.credentials.authorize(httplib2.Http())
 
-    def get_urls(self):
+    def get_column(self, col):
         discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
                     'version=v4')
         service = discovery.build('sheets', 'v4', http=self.http,
                               discoveryServiceUrl=discoveryUrl)
-
-        spreadsheetId = self.spreadsheetId
-
+        print("Getting {0} column of {1}".format(col, self.spreadsheetId))
         result = service.spreadsheets().values().get(
-            spreadsheetId=spreadsheetId, range=self.sh_col).execute()
+            spreadsheetId=self.spreadsheetId, range=col).execute()
         values = result.get('values', [])
 
         if not values:
             print('No data found.')
-
+        print("done")
         for row in values:
             if row:
                 yield row[0]
 
-    def write_urls(self, urls):
-        if not urls:
+    def write_column(self, data, column):
+        if not data:
             print("No Urls to write")
             return
-
         discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
                     'version=v4')
         service = discovery.build('sheets', 'v4', http=self.http,
                               discoveryServiceUrl=discoveryUrl)
 
         body = {
-        'values': urls,
+        'values': data,
         "majorDimension": "COLUMNS"
         }
-        result = service.spreadsheets().values().update(
-        spreadsheetId = self.spreadsheetId, range=self.lng_col,
+        result = service.spreadsheets().values().update(    # append
+        spreadsheetId = self.spreadsheetId, range=column,
         valueInputOption = "RAW", body=body).execute()
+
+        print("write {0}".format(data))
         return result
 
 def unshorten_url(url):
     if url:
         long_url = requests.head(url, allow_redirects=True).url
     else:
-        long_url = "can't unshort. No short url specified."
+        long_url = None
+    print("{0} --> {1}".format(url, long_url))
     return long_url
 
 
@@ -103,15 +100,15 @@ def read_config(settings):
 
 def factory(spname, spid, shcol, lncol):
     print("Start reading " +spname)
-    sp = SpreadSheet(spid, shcol, lncol)
-    urls = sp.get_urls()
+    sp = SpreadSheet(spid)
+    urls = sp.get_column(shcol)
 
     if not urls:
         print("Nothing to write to" + spname + "Exiting.")
         print(urls)
     rez = []
     rez.append([unshorten_url(uu) for uu in urls])  # must be list of lists
-    sp.write_urls(rez)
+    sp.write_column(rez, lncol)
     print("writing " + spname + " done")
     return
 
@@ -121,7 +118,8 @@ if __name__ == "__main__":
     with open('UrlExpanderSettings.json') as json_data:
         Settings = json.load(json_data)
     print("Done.")
-     # create threads
+
+    # create threads
     threads = [threading.Thread(target=factory, args=args) for args in read_config(Settings)]
 
     # start threads
